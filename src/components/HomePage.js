@@ -1,12 +1,14 @@
+// HomePage.js
 import React, { useState } from 'react';
 import SaveButton from './SaveButton';
+import Calendar from './Calendar'; // นำเข้า Calendar
 import './calendar.css';
 
 const HomePage = () => {
   const [nextPeriod, setNextPeriod] = useState();
   const [cycleDates, setCycleDates] = useState([]);
   const [predictedDates, setPredictedDates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(null); // เก็บวันที่ที่เลือก
   const [dailySymptoms, setDailySymptoms] = useState({});
   const [showSymptomForm, setShowSymptomForm] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -49,17 +51,17 @@ const HomePage = () => {
     setTimeout(() => setShowPopup(false), 2000);
   };
 
+  // เพิ่มฟังก์ชัน handleDateClick เพื่อรับวันที่ที่เลือกจากปฏิทิน
+  const handleDateClick = (day) => {
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    const formattedDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setSelectedDate(formattedDate);
+    setSelectedSymptoms(dailySymptoms[formattedDate] || { flow: '', mood: [], symptoms: [] });
+  };
+
   const renderCalendar = () => (
-    <div className="calendar-grid">
-      {Array.from({ length: 31 }, (_, index) => (
-        <div
-          key={index + 1}
-          className={`calendar-day ${new Date().getDate() === index + 1 ? 'bg-gray-300' : ''}`}
-        >
-          {index + 1}
-        </div>
-      ))}
-    </div>
+    <Calendar handleDateClick={handleDateClick} />
   );
 
   return (
@@ -78,10 +80,12 @@ const HomePage = () => {
       <h3 className="text-lg font-bold mt-5">ปฏิทินรอบเดือน</h3>
       <div className="mt-5">{renderCalendar()}</div>
 
-      {/* เลือกวันที่ */}
-      <div className="mt-5">
-        <input type="date" value={selectedDate} onChange={handleDateChange} />
-      </div>
+      {/* แสดงวันที่ที่เลือก */}
+      {selectedDate && (
+        <div className="mt-5">
+          <p>คุณเลือกวันที่: {selectedDate}</p>
+        </div>
+      )}
 
       <div className="mt-5 flex justify-center">
         <SaveButton onCycleDatesChange={handleLogCycle} />
