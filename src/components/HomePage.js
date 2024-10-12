@@ -11,6 +11,9 @@ const HomePage = ({ selectedDate, handleDateChange }) => {
   const [showSymptomForm, setShowSymptomForm] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState({ flow: '', mood: [], symptoms: [] });
+  
+  const [loggedDates, setLoggedDates] = useState([]); // เก็บวันที่บันทึก
+  const [predictedDates, setPredictedDates] = useState([]); // เก็บวันที่คาดการณ์
 
   useEffect(() => {
     // ดึงข้อมูลอาการของวันที่ที่เลือก หากมีข้อมูลอยู่ใน dailySymptoms
@@ -24,9 +27,15 @@ const HomePage = ({ selectedDate, handleDateChange }) => {
 
   const handleLogSymptoms = () => setShowSymptomForm(true);
 
-  const handleLogCycle = () => {
-    const today = new Date().toISOString().split('T')[0];
-    setCycleDates([...cycleDates, today]);
+  const handleLogCycle = (date) => {
+    // ลบวันที่ทั้งหมดที่เคยบันทึกไว้ก่อน
+    setCycleDates([date]);
+    setLoggedDates([date]); // บันทึกวันที่ที่เลือกล่าสุดเท่านั้น
+  };
+  
+  
+  const handlePredictedDates = (dates) => {
+    setPredictedDates(dates); // บันทึกวันที่คาดการณ์
   };
 
   const handleSymptomChange = (e) => {
@@ -61,7 +70,12 @@ const HomePage = ({ selectedDate, handleDateChange }) => {
 
       <h3 className="calendar-title">ปฏิทินรอบเดือน</h3>
       <div className="calendar-container">
-        <Calendar selectedDate={selectedDate} handleDateChange={handleDateChange} />
+        <Calendar 
+          selectedDate={selectedDate} 
+          handleDateChange={handleDateChange} 
+          loggedDates={loggedDates} 
+          predictedDates={predictedDates} 
+        />
       </div>
 
       {/* แสดงวันที่ที่เลือก */}
@@ -72,18 +86,14 @@ const HomePage = ({ selectedDate, handleDateChange }) => {
       )}
 
       <div className="save-button-container">
-        <SaveButton onCycleDatesChange={handleLogCycle} />
+        <SaveButton 
+          selectedDate={selectedDate} 
+          onCycleDatesChange={handleLogCycle} 
+          onPredictedDatesChange={handlePredictedDates} 
+        />
       </div>
 
-      {/* แสดงวันที่รอบเดือน */}
-      <div className="cycle-dates-container">
-        <h3 className="cycle-dates-title">วันที่บันทึกรอบเดือน</h3>
-        <ul>
-          {cycleDates.map((date, index) => (
-            <li key={index}>{date}</li>
-          ))}
-        </ul>
-      </div>
+      
 
       <div className="daily-insights-container">
         <div className="daily-insights-title">ข้อมูลเชิงลึกประจำวันของฉัน - {selectedDate.toLocaleDateString('th-TH')}</div>
