@@ -1,12 +1,12 @@
-// Calendar.js
-import React, { useState } from 'react';
+import React from 'react';
 
-const Calendar = ({ handleDateClick }) => {
-  const [selectedDay, setSelectedDay] = useState(null);
+const Calendar = ({ selectedDate, handleDateChange }) => {
+  const selectedDay = selectedDate.getDate();
 
   const onDateClick = (day) => {
-    setSelectedDay(day);
-    handleDateClick(day);
+    const newDate = new Date(selectedDate);
+    newDate.setDate(day);
+    handleDateChange(newDate);
   };
 
   return (

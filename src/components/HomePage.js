@@ -1,37 +1,32 @@
-// HomePage.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SaveButton from './SaveButton';
-import Calendar from './Calendar'; // นำเข้า Calendar
+import Calendar from './Calendar';
 import './calendar.css';
+import './homePage.css';
 
-const HomePage = () => {
+const HomePage = ({ selectedDate, handleDateChange }) => {
   const [nextPeriod, setNextPeriod] = useState();
   const [cycleDates, setCycleDates] = useState([]);
-  const [predictedDates, setPredictedDates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null); // เก็บวันที่ที่เลือก
   const [dailySymptoms, setDailySymptoms] = useState({});
   const [showSymptomForm, setShowSymptomForm] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState({ flow: '', mood: [], symptoms: [] });
+
+  useEffect(() => {
+    // ดึงข้อมูลอาการของวันที่ที่เลือก หากมีข้อมูลอยู่ใน dailySymptoms
+    if (dailySymptoms[selectedDate]) {
+      setSelectedSymptoms(dailySymptoms[selectedDate]);
+    } else {
+      // ถ้าไม่มีข้อมูลอาการ ให้รีเซ็ตเป็นค่าว่าง
+      setSelectedSymptoms({ flow: '', mood: [], symptoms: [] });
+    }
+  }, [selectedDate, dailySymptoms]);
 
   const handleLogSymptoms = () => setShowSymptomForm(true);
 
   const handleLogCycle = () => {
     const today = new Date().toISOString().split('T')[0];
     setCycleDates([...cycleDates, today]);
-
-    const newPredictedDates = Array.from({ length: 5 }, (_, i) => {
-      const nextDate = new Date();
-      nextDate.setDate(new Date().getDate() + i + 1);
-      return nextDate.toISOString().split('T')[0];
-    });
-    setPredictedDates(newPredictedDates);
-  };
-
-  const handleDateChange = (e) => {
-    const newDate = e.target.value;
-    setSelectedDate(newDate);
-    setSelectedSymptoms(dailySymptoms[newDate] || { flow: '', mood: [], symptoms: [] });
   };
 
   const handleSymptomChange = (e) => {
@@ -51,49 +46,38 @@ const HomePage = () => {
     setTimeout(() => setShowPopup(false), 2000);
   };
 
-  // เพิ่มฟังก์ชัน handleDateClick เพื่อรับวันที่ที่เลือกจากปฏิทิน
-  const handleDateClick = (day) => {
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
-    const formattedDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    setSelectedDate(formattedDate);
-    setSelectedSymptoms(dailySymptoms[formattedDate] || { flow: '', mood: [], symptoms: [] });
-  };
-
-  const renderCalendar = () => (
-    <Calendar handleDateClick={handleDateClick} />
-  );
-
   return (
-    <div className="p-5">
+    <div className="home-page-container">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="text-xl"></div>
+      <div className="header-container">
+        <div className="header-title"></div>
       </div>
 
-      <div className="mt-5 text-center">
-        <div className="text-lg font-bold">ประจำเดือนจะมาใน</div>
-        <div className="text-6xl font-bold text-pink-500">{nextPeriod} วัน</div>
-        <div className="text-sm mt-2">โอกาสตั้งครรภ์น้อย</div>
+      <div className="period-info-container">
+        <div className="period-info-title">ประจำเดือนจะมาใน</div>
+        <div className="period-info-days">{nextPeriod} วัน</div>
+        <div className="pregnancy-chance">โอกาสตั้งครรภ์น้อย</div>
       </div>
 
-      <h3 className="text-lg font-bold mt-5">ปฏิทินรอบเดือน</h3>
-      <div className="mt-5">{renderCalendar()}</div>
+      <h3 className="calendar-title">ปฏิทินรอบเดือน</h3>
+      <div className="calendar-container">
+        <Calendar selectedDate={selectedDate} handleDateChange={handleDateChange} />
+      </div>
 
       {/* แสดงวันที่ที่เลือก */}
       {selectedDate && (
-        <div className="mt-5">
-          <p>คุณเลือกวันที่: {selectedDate}</p>
+        <div className="selected-date-container">
+          <p>คุณเลือกวันที่: {selectedDate.toLocaleDateString('th-TH')}</p>
         </div>
       )}
 
-      <div className="mt-5 flex justify-center">
+      <div className="save-button-container">
         <SaveButton onCycleDatesChange={handleLogCycle} />
       </div>
 
       {/* แสดงวันที่รอบเดือน */}
-      <div className="mt-10">
-        <h3 className="text-lg font-bold">วันที่บันทึกรอบเดือน</h3>
+      <div className="cycle-dates-container">
+        <h3 className="cycle-dates-title">วันที่บันทึกรอบเดือน</h3>
         <ul>
           {cycleDates.map((date, index) => (
             <li key={index}>{date}</li>
@@ -101,14 +85,14 @@ const HomePage = () => {
         </ul>
       </div>
 
-      <div className="mt-10">
-        <div className="text-lg font-bold">ข้อมูลเชิงลึกประจำวันของฉัน - {selectedDate}</div>
-        <div className="mt-5 grid grid-cols-2 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow-md flex items-center justify-between">
+      <div className="daily-insights-container">
+        <div className="daily-insights-title">ข้อมูลเชิงลึกประจำวันของฉัน - {selectedDate.toLocaleDateString('th-TH')}</div>
+        <div className="insights-grid">
+          <div className="insight-card">
             <div>บันทึกอาการของคุณ</div>
-            <div className="bg-pink-500 text-white rounded-full p-2 cursor-pointer" onClick={handleLogSymptoms}>+</div>
+            <div className="add-symptom-button" onClick={handleLogSymptoms}>+</div>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow-md">
+          <div className="insight-card">
             <div>ข้อมูลเชิงลึกเฉพาะบุคคลสำหรับวันนี้</div>
           </div>
         </div>
@@ -116,53 +100,53 @@ const HomePage = () => {
 
       {/* Show symptom selection form */}
       {showSymptomForm && (
-        <div className="mt-5">
-          <h3 className="text-lg font-bold">เลือกอาการที่คุณรู้สึก</h3>
+        <div className="symptom-form-container">
+          <h3 className="symptom-form-title">เลือกอาการที่คุณรู้สึก</h3>
           {['มามาก', 'มาปานกลาง', 'มาน้อย'].map((flow) => (
-            <label className="block mt-2" key={flow}>
+            <label className="symptom-option" key={flow}>
               <input
                 type="radio"
                 name="flow"
                 value={flow}
                 onChange={handleSymptomChange}
                 checked={selectedSymptoms.flow === flow}
-                className="mr-2"
+                className="symptom-input"
               />
               {flow}
             </label>
           ))}
 
-          <h4 className="font-bold mt-4">อารมณ์</h4>
+          <h4 className="symptom-category-title">อารมณ์</h4>
           {['เงียบสงบ', 'มีความสุข', 'กระปรี้กระเปร่า', 'หงุดหงิด', 'เศร้า', 'กระวนกระวาย', 'หดหู่', 'รู้สึกผิด', 'ไม่กระตือรือร้น', 'สับสน', 'วิจารณ์ตัวเอง', 'อารมณ์แปรปรวน'].map((mood) => (
-            <label className="block mt-2" key={mood}>
+            <label className="symptom-option" key={mood}>
               <input
                 type="checkbox"
                 name="mood"
                 value={mood}
                 onChange={handleSymptomChange}
                 checked={selectedSymptoms.mood.includes(mood)}
-                className="mr-2"
+                className="symptom-input"
               />
               {mood}
             </label>
           ))}
 
-          <h4 className="font-bold mt-4">อาการ</h4>
+          <h4 className="symptom-category-title">อาการ</h4>
           {['ปวดประจำเดือน', 'เจ็บเต้านม', 'ปวดศีรษะ', 'อ่อนเพลีย', 'เป็นสิว', 'ปวดหลัง', 'มีความอยากอาหารสูง', 'นอนไม่หลับ'].map((symptom) => (
-            <label className="block mt-2" key={symptom}>
+            <label className="symptom-option" key={symptom}>
               <input
                 type="checkbox"
                 name="symptoms"
                 value={symptom}
                 onChange={handleSymptomChange}
                 checked={selectedSymptoms.symptoms.includes(symptom)}
-                className="mr-2"
+                className="symptom-input"
               />
               {symptom}
             </label>
           ))}
 
-          <button className="bg-pink-500 text-white py-2 px-4 rounded-full mt-4" onClick={handleSaveSymptoms}>
+          <button className="save-symptom-button" onClick={handleSaveSymptoms}>
             บันทึกอาการ
           </button>
         </div>
@@ -170,32 +154,22 @@ const HomePage = () => {
 
       {/* สรุปอาการของวันที่ที่เลือก */}
       {dailySymptoms[selectedDate] && (
-        <div className="mt-10 bg-gray-100 p-4 rounded-lg">
-          <h3 className="text-lg font-bold">สรุปอาการของคุณ</h3>
-          <p className="mt-2">ปริมาณประจำเดือน: {dailySymptoms[selectedDate].flow || 'ไม่ได้ระบุ'}</p>
-          <p className="mt-2">อารมณ์: {dailySymptoms[selectedDate].mood.join(', ') || 'ไม่ได้ระบุ'}</p>
-          <p className="mt-2">อาการ: {dailySymptoms[selectedDate].symptoms.join(', ') || 'ไม่ได้ระบุ'}</p>
+        <div className="symptom-summary-container">
+          <h3 className="symptom-summary-title">สรุปอาการของคุณ</h3>
+          <p className="symptom-summary-item">ปริมาณประจำเดือน: {dailySymptoms[selectedDate].flow || 'ไม่ได้ระบุ'}</p>
+          <p className="symptom-summary-item">อารมณ์: {dailySymptoms[selectedDate].mood.join(', ') || 'ไม่ได้ระบุ'}</p>
+          <p className="symptom-summary-item">อาการ: {dailySymptoms[selectedDate].symptoms.join(', ') || 'ไม่ได้ระบุ'}</p>
         </div>
       )}
 
       {/* Popup */}
       {showPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-5 rounded-lg shadow-lg">
-            <h3 className="text-lg font-bold">บันทึกอาการของคุณแล้ว</h3>
+        <div className="popup-overlay">
+          <div className="popup-content">
+            <h3 className="popup-title">บันทึกอาการของคุณแล้ว</h3>
           </div>
         </div>
       )}
-
-      {/* Bottom navigation */}
-      <div className="fixed bottom-0 w-full bg-white p-4 flex justify-between items-center shadow-md">
-        {['วันนี้', 'ข้อมูลเชิงลึก', 'ข้อความ', 'คู่รัก'].map((text) => (
-          <div key={text} className="flex flex-col items-center">
-            <div>📅</div>
-            <div>{text}</div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
