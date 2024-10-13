@@ -1,66 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import SaveButton from './SaveButton';
 import Calendar from './Calendar';
 import SymptomForm from './SymptomForm';
-import './calendar.css';
 import './homePage.css';
 
 const HomePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [nextPeriod, setNextPeriod] = useState(null);
   const [cycleDates, setCycleDates] = useState([]);
+  const [predictedDates, setPredictedDates] = useState([]);
   const [dailySymptoms, setDailySymptoms] = useState({});
   const [showSymptomForm, setShowSymptomForm] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState({ flow: '', mood: [], symptoms: [] });
-
-  const [loggedDates, setLoggedDates] = useState([]);
-  const [predictedDates, setPredictedDates] = useState([]);
+  const [currentDayOfPeriod, setCurrentDayOfPeriod] = useState(1); // สำหรับเก็บวันที่ในรอบประจำเดือน
   const [isSaved, setIsSaved] = useState(false);
+  const [isFirstDay, setIsFirstDay] = useState(true); // ตรวจสอบว่าเป็นวันแรกหรือไม่
+  const [nextPeriodDate, setNextPeriodDate] = useState(null); // บันทึกวันที่ประจำเดือนครั้งถัดไป
 
+  // ฟังก์ชันจัดการการเปลี่ยนแปลงวันที่
   const handleDateChange = (newDate) => {
-    console.log("New selected date:", newDate);
     setSelectedDate(newDate);
-    calculateNextPeriod(newDate);
-    setIsSaved(false);
+    setIsSaved(false); // รีเซ็ตสถานะเมื่อเปลี่ยนวันที่
   };
 
-  const calculateNextPeriod = (currentDate) => {
-    let validDate = new Date(currentDate);
-
-    let currentYear = validDate.getFullYear();
-    if (currentYear > 2400) {
-      validDate.setFullYear(currentYear - 543);
-    }
-
-    if (!isNaN(validDate)) {
-      const cycleLength = 28;
-      validDate.setDate(validDate.getDate() + cycleLength);
-
-      console.log("Next period date calculated:", validDate);
-
-      setNextPeriod(validDate);
-    } else {
-      console.error("Invalid date provided:", currentDate);
-    }
-  };
-
+  // ฟังก์ชันสำหรับบันทึกวันที่ที่เลือก
   const handleLogCycle = (date) => {
-    console.log("Selected date for log cycle:", date);
-    setCycleDates([date]);
-    setLoggedDates([date]);
+    setCycleDates([...cycleDates, date]);
     setIsSaved(true);
+    setCurrentDayOfPeriod(cycleDates.length + 1); // เพิ่มลำดับวันในรอบประจำเดือน
+    setIsFirstDay(false); // หลังจากบันทึกวันแรกแล้ว จะไม่ใช่วันแรกอีกต่อไป
+
+    // คำนวณวันประจำเดือนถัดไปเฉพาะเมื่อเป็นวันแรก
+    if (isFirstDay) {
+      const calculatedNextPeriod = calculateNextPeriod(date);
+      setNextPeriodDate(calculatedNextPeriod); // เก็บวันที่คำนวณได้
+      calculatePredictedDates(date); // คำนวณวันคาดการณ์ที่เหลืออีก 4 วัน
+    }
   };
 
-  const formatThaiDate = (date) => {
-    const months = [
-      "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-      "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-    ];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear() + 543;
-    return `${day} ${month} ${year}`;
+  // ฟังก์ชันคำนวณวันที่ประจำเดือนจะมาอีก
+  const calculateNextPeriod = (startDate) => {
+    const cycleLength = 28; // รอบประจำเดือนเฉลี่ย 28 วัน
+    const nextPeriodDate = new Date(startDate);
+    nextPeriodDate.setDate(startDate.getDate() + cycleLength); // เพิ่ม 28 วัน
+    return nextPeriodDate;
+  };
+
+  // ฟังก์ชันคำนวณวันคาดการณ์ 5 วันหลังจากวันแรก
+  const calculatePredictedDates = (startDate) => {
+    const predicted = [];
+    for (let i = 1; i <= 5; i++) {
+      const predictedDate = new Date(startDate);
+      predictedDate.setDate(startDate.getDate() + i);
+      predicted.push(predictedDate);
+    }
+    setPredictedDates(predicted); // บันทึกวันคาดการณ์ทั้ง 5 วัน
   };
 
   const handleLogSymptoms = () => setShowSymptomForm(true);
@@ -82,6 +76,18 @@ const HomePage = () => {
     setTimeout(() => setShowPopup(false), 2000);
   };
 
+  // ฟังก์ชันแปลงวันที่เป็นรูปแบบภาษาไทย
+  const formatThaiDate = (date) => {
+    const months = [
+      "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+      "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    ];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear() + 543;
+    return `${day} ${month} ${year}`;
+  };
+
   return (
     <div className="home-page-container">
       <div className="period-info-container">
@@ -91,14 +97,14 @@ const HomePage = () => {
               ประจำเดือน:
             </div>
             <div className="period-info-title period-info-title-large">
-              วันที่ {selectedDate.getDate()}
+              วันที่ {currentDayOfPeriod}
             </div>
           </>
         )}
 
-        {isSaved && (
+        {isSaved && nextPeriodDate && (
           <div className="period-info-days">
-            {nextPeriod ? `ประจำเดือนจะมาอีก: ${formatThaiDate(nextPeriod)}` : 'ยังไม่ได้ระบุ'}
+            ประจำเดือนจะมาอีก: {formatThaiDate(nextPeriodDate)}
           </div>
         )}
       </div>
@@ -108,7 +114,7 @@ const HomePage = () => {
         <Calendar 
           selectedDate={selectedDate} 
           handleDateChange={handleDateChange} 
-          loggedDates={loggedDates} 
+          loggedDates={cycleDates} 
           predictedDates={predictedDates} 
         />
       </div>
