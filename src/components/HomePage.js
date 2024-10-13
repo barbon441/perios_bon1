@@ -1,42 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import SaveButton from './SaveButton';
 import Calendar from './Calendar';
+import SymptomForm from './SymptomForm';
 import './calendar.css';
 import './homePage.css';
 
-const HomePage = ({ selectedDate, handleDateChange }) => {
-  const [nextPeriod, setNextPeriod] = useState();
+const HomePage = () => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [nextPeriod, setNextPeriod] = useState(null);
   const [cycleDates, setCycleDates] = useState([]);
   const [dailySymptoms, setDailySymptoms] = useState({});
   const [showSymptomForm, setShowSymptomForm] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState({ flow: '', mood: [], symptoms: [] });
-  
-  const [loggedDates, setLoggedDates] = useState([]); // เก็บวันที่บันทึก
-  const [predictedDates, setPredictedDates] = useState([]); // เก็บวันที่คาดการณ์
 
-  useEffect(() => {
-    // ดึงข้อมูลอาการของวันที่ที่เลือก หากมีข้อมูลอยู่ใน dailySymptoms
-    if (dailySymptoms[selectedDate]) {
-      setSelectedSymptoms(dailySymptoms[selectedDate]);
-    } else {
-      // ถ้าไม่มีข้อมูลอาการ ให้รีเซ็ตเป็นค่าว่าง
-      setSelectedSymptoms({ flow: '', mood: [], symptoms: [] });
+  const [loggedDates, setLoggedDates] = useState([]);
+  const [predictedDates, setPredictedDates] = useState([]);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const handleDateChange = (newDate) => {
+    console.log("New selected date:", newDate);
+    setSelectedDate(newDate);
+    calculateNextPeriod(newDate);
+    setIsSaved(false);
+  };
+
+  const calculateNextPeriod = (currentDate) => {
+    let validDate = new Date(currentDate);
+
+    let currentYear = validDate.getFullYear();
+    if (currentYear > 2400) {
+      validDate.setFullYear(currentYear - 543);
     }
-  }, [selectedDate, dailySymptoms]);
 
-  const handleLogSymptoms = () => setShowSymptomForm(true);
+    if (!isNaN(validDate)) {
+      const cycleLength = 28;
+      validDate.setDate(validDate.getDate() + cycleLength);
+
+      console.log("Next period date calculated:", validDate);
+
+      setNextPeriod(validDate);
+    } else {
+      console.error("Invalid date provided:", currentDate);
+    }
+  };
 
   const handleLogCycle = (date) => {
-    // ลบวันที่ทั้งหมดที่เคยบันทึกไว้ก่อน
+    console.log("Selected date for log cycle:", date);
     setCycleDates([date]);
-    setLoggedDates([date]); // บันทึกวันที่ที่เลือกล่าสุดเท่านั้น
+    setLoggedDates([date]);
+    setIsSaved(true);
   };
-  
-  
-  const handlePredictedDates = (dates) => {
-    setPredictedDates(dates); // บันทึกวันที่คาดการณ์
+
+  const formatThaiDate = (date) => {
+    const months = [
+      "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+      "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    ];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear() + 543;
+    return `${day} ${month} ${year}`;
   };
+
+  const handleLogSymptoms = () => setShowSymptomForm(true);
 
   const handleSymptomChange = (e) => {
     const { name, value, checked } = e.target;
@@ -57,15 +84,23 @@ const HomePage = ({ selectedDate, handleDateChange }) => {
 
   return (
     <div className="home-page-container">
-      {/* Header */}
-      <div className="header-container">
-        <div className="header-title"></div>
-      </div>
-
       <div className="period-info-container">
-        <div className="period-info-title">ประจำเดือนจะมาใน</div>
-        <div className="period-info-days">{nextPeriod} วัน</div>
-        <div className="pregnancy-chance">โอกาสตั้งครรภ์น้อย</div>
+        {isSaved && (
+          <>
+            <div className="period-info-title period-info-title-small">
+              ประจำเดือน:
+            </div>
+            <div className="period-info-title period-info-title-large">
+              วันที่ {selectedDate.getDate()}
+            </div>
+          </>
+        )}
+
+        {isSaved && (
+          <div className="period-info-days">
+            {nextPeriod ? `ประจำเดือนจะมาอีก: ${formatThaiDate(nextPeriod)}` : 'ยังไม่ได้ระบุ'}
+          </div>
+        )}
       </div>
 
       <h3 className="calendar-title">ปฏิทินรอบเดือน</h3>
@@ -78,22 +113,13 @@ const HomePage = ({ selectedDate, handleDateChange }) => {
         />
       </div>
 
-      {/* แสดงวันที่ที่เลือก */}
-      {selectedDate && (
-        <div className="selected-date-container">
-          <p>คุณเลือกวันที่: {selectedDate.toLocaleDateString('th-TH')}</p>
-        </div>
-      )}
-
       <div className="save-button-container">
         <SaveButton 
-          selectedDate={selectedDate} 
+          selectedDate={selectedDate}
           onCycleDatesChange={handleLogCycle} 
-          onPredictedDatesChange={handlePredictedDates} 
+          onPredictedDatesChange={setPredictedDates} 
         />
-      </div>
-
-      
+      </div>  
 
       <div className="daily-insights-container">
         <div className="daily-insights-title">ข้อมูลเชิงลึกประจำวันของฉัน - {selectedDate.toLocaleDateString('th-TH')}</div>
@@ -102,67 +128,17 @@ const HomePage = ({ selectedDate, handleDateChange }) => {
             <div>บันทึกอาการของคุณ</div>
             <div className="add-symptom-button" onClick={handleLogSymptoms}>+</div>
           </div>
-          <div className="insight-card">
-            <div>ข้อมูลเชิงลึกเฉพาะบุคคลสำหรับวันนี้</div>
-          </div>
         </div>
       </div>
 
-      {/* Show symptom selection form */}
       {showSymptomForm && (
-        <div className="symptom-form-container">
-          <h3 className="symptom-form-title">เลือกอาการที่คุณรู้สึก</h3>
-          {['มามาก', 'มาปานกลาง', 'มาน้อย'].map((flow) => (
-            <label className="symptom-option" key={flow}>
-              <input
-                type="radio"
-                name="flow"
-                value={flow}
-                onChange={handleSymptomChange}
-                checked={selectedSymptoms.flow === flow}
-                className="symptom-input"
-              />
-              {flow}
-            </label>
-          ))}
-
-          <h4 className="symptom-category-title">อารมณ์</h4>
-          {['เงียบสงบ', 'มีความสุข', 'กระปรี้กระเปร่า', 'หงุดหงิด', 'เศร้า', 'กระวนกระวาย', 'หดหู่', 'รู้สึกผิด', 'ไม่กระตือรือร้น', 'สับสน', 'วิจารณ์ตัวเอง', 'อารมณ์แปรปรวน'].map((mood) => (
-            <label className="symptom-option" key={mood}>
-              <input
-                type="checkbox"
-                name="mood"
-                value={mood}
-                onChange={handleSymptomChange}
-                checked={selectedSymptoms.mood.includes(mood)}
-                className="symptom-input"
-              />
-              {mood}
-            </label>
-          ))}
-
-          <h4 className="symptom-category-title">อาการ</h4>
-          {['ปวดประจำเดือน', 'เจ็บเต้านม', 'ปวดศีรษะ', 'อ่อนเพลีย', 'เป็นสิว', 'ปวดหลัง', 'มีความอยากอาหารสูง', 'นอนไม่หลับ'].map((symptom) => (
-            <label className="symptom-option" key={symptom}>
-              <input
-                type="checkbox"
-                name="symptoms"
-                value={symptom}
-                onChange={handleSymptomChange}
-                checked={selectedSymptoms.symptoms.includes(symptom)}
-                className="symptom-input"
-              />
-              {symptom}
-            </label>
-          ))}
-
-          <button className="save-symptom-button" onClick={handleSaveSymptoms}>
-            บันทึกอาการ
-          </button>
-        </div>
+        <SymptomForm
+          selectedSymptoms={selectedSymptoms}
+          handleSymptomChange={handleSymptomChange}
+          handleSaveSymptoms={handleSaveSymptoms}
+        />
       )}
 
-      {/* สรุปอาการของวันที่ที่เลือก */}
       {dailySymptoms[selectedDate] && (
         <div className="symptom-summary-container">
           <h3 className="symptom-summary-title">สรุปอาการของคุณ</h3>
@@ -172,7 +148,6 @@ const HomePage = ({ selectedDate, handleDateChange }) => {
         </div>
       )}
 
-      {/* Popup */}
       {showPopup && (
         <div className="popup-overlay">
           <div className="popup-content">

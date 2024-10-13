@@ -166,3 +166,26 @@
   font-size: 1.125rem;
   font-weight: bold;
 }
+.period-info-title {
+  color: #FF007F;
+  font-weight: bold;
+}
+
+.period-info-title-large {
+  font-size: 28px;
+}
+
+.period-info-title-small {
+  font-size: 24px;
+}
+
+.period-info-days {
+  color: #FF007F;
+  font-size: 14px;
+}
+
+.save-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
